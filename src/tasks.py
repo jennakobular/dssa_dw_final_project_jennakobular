@@ -37,6 +37,8 @@ def connect():
 if __name__ == '__main__':
 	connect()
  
+""" task to select from database table"""
+ 
 def select_from_table(cur, table_name, schema):
   params = config()
   conn = psycopg.connect(**params)
@@ -46,3 +48,28 @@ def select_from_table(cur, table_name, schema):
   conn.close()
   return results
 
+""" This may be a better def to get connection than the original?
+
+def get_connection():
+    params = config()
+    try:
+        return psycopg.connect(**params)
+    except:
+        return False
+  
+conn = get_connection()
+  
+if conn:
+    print("Connection to the PostgreSQL established successfully.")
+else:
+    print("Connection to the PostgreSQL encountered and error.")
+
+"""
+
+""" even more basic way to get connection -- may be the best
+def connect_to_dvdrental():
+    params = config()
+    conn = psycopg.connect(params)
+    cur = conn.cursor()
+    return cur
+"""
