@@ -1,6 +1,7 @@
 import pandas as pd
 from clients.config import config
 import psycopg
+from datetime import datetime as dt 
  
 def connect_to_dvdrental():
     params=config()
@@ -24,9 +25,9 @@ def convert_pandas(results):
 
 def main():
     
-   """ 1) need to figure out what to put in here (def main())
+   """ 1) need to figure out what to put in here (def main()) -- it seems like this area CAN be hardcoded but unsure of syntax to use still. pg 222 in data wrangling has example of def main()
    
- 2) need to figure out how to run through the nec. table names for select_from_table() funct.
+ 2) need to figure out how to run through the nec. table names for select_from_table() funct. --> i believe this is touched upon in worker video
  
  3) need to rewatch first task video again -- these have to be extremely basic, no hardcoding
  
