@@ -2,6 +2,9 @@ import pandas as pd
 import psycopg
 from src.clients.config import config
 
+"""i think i can delete this, this is the same as main.py -- just keeping for my notes rn"""
+
+
 """" USE PYPIKA FOR POSTGRESQL BUILDER  - looks like will need to pip install
 from pypika import PostgreSQLQuery
 from pypika import Query, Schema, Column
