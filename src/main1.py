@@ -17,47 +17,56 @@ SQLALCHEMY_DATABASE_URI = f"{dbtype}://{user}:{password}@{host}:{port}/{db}"
 conn = create_engine(SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
 
 
-#Defintion of Functions
-#Takes care of set up part of the ETL
+#this function is not needed since now using sqlalchemy
 def create_conn(path, section):
     client = PostgresClient()
     con = client.connect_from_config(path, section, autocommit=True)
     return con
 
-# Takes care of the "Extract" part  of ETL
-def read_table(sql, con) -> pd.DataFrame:
-    df = pd.read_sql(sql=sql, con=con)
+#extracts from the dvdrental public schema
+def read_table(sql, con):
+    df = pd.read_sql(sql, con)
     return df
 
-# Takes care of the "Load" part  of ETL
+#loads transformed tables into the dssa schema
 def write_table(df:pd.DataFrame, name, con, schema, if_exist='replace') -> pd.DataFrame:
     df.to_sql(name=name, con=con, if_exists=if_exist, schema=schema, index=False, method='multi')
     return None
 
-def transform_customer(df):
-    df.rename(columns={'customer_id': 'sk_customer'}, inplace=True)
-    df['name'] = df.first_name + " " + df.last_name
-    dim_customer = df[['sk_customer', 'name', 'email']].copy()
+#using pandas to transform customer table prior to loading into dssa schema
+def transform_customer(cust_df):
+    cust_df.rename(columns={'customer_id': 'sk_customer'}, inplace=True)
+    cust_df['name'] = cust_df.first_name + " " + cust_df.last_name
+    dim_customer = cust_df[['sk_customer', 'name', 'email']].copy()
     dim_customer.drop_duplicates(inplace=True)
     return dim_customer
 
-def transform_staff(df):
-    df.rename(columns={'staff_id':'sk_staff'}, inplace=True)
-    df['name'] = df.first_name + " " + df.last_name 
-    dim_staff = df[['sk_staff', 'name','email']].copy()
+#using pandas to transform staff table prior to loading into dssa schema
+def transform_staff(staff_df):
+    staff_df.rename(columns={'staff_id':'sk_staff'}, inplace=True)
+    staff_df['name'] = staff_df.first_name + " " + staff_df.last_name 
+    dim_staff = staff_df[['sk_staff', 'name','email']].copy()
     dim_staff.drop_duplicates(inplace=True)
     return dim_staff
 
 
-#def transform_store(df,df1,df2,df3,df4):
- #  df.rename(columns={'store_id':'sk_store'}, inplace=True)
-  # dim_store=df[['sk_store']]
-   #dim_store
+def transform_store(store_df,staff_df,address_df,city_df,country_df):
+    
+    
+    
+    
+    return dim_store
    
+#using pandas to transform film table before loading into dssa schema 
+def transform_film(film_df, lang_df):
+    film_df.rename(columns={'film_id':'sk_film', 'rating':'rating_code','length':'film_duration'}, inplace=True)
+    lang_df.rename(columns={'name':'language'}, inplace=True)
+    film_df = film_df.merge(lang_df, how='inner', on='language_id')
+    dim_film= film_df[['sk_film', 'rating_code','film_duration','rental_duration','language','release_year','title']].copy()
+    dim_film.drop_duplicates(inplace=True)
+    return dim_film
 
-#ef transform_film():
-
-def transform_date():
+#def transform_date():
 
 
 #def transform_factrental():
@@ -71,21 +80,27 @@ def main():
     
     #customer table dw parameters
     customer = read_table(sql='SELECT * FROM public.customer', con=conn) 
-    dim_customer = transform_customer(df=customer)
+    dim_customer = transform_customer(cust_df=customer)
     load_dim_customer = write_table(df=dim_customer, con=conn, name='dim_customer', schema='dssa', if_exist='replace')
     
     #staff table dw parameters
     staff = read_table(sql='SELECT * FROM public.staff', con=conn) 
-    dim_staff= transform_staff(df=staff)
+    dim_staff= transform_staff(staff_df=staff)
     load_dim_staff = write_table(df=dim_staff, con=conn, name='dim_staff', schema='dssa', if_exist='replace')
     
     #store table dw parameters
-    store = read_table(sql='SELECT * FROM public.store', con=conn)
-    name= read_table(sql='SELECT * from public.staff', con=conn)
-    address = read_table(sql='SELECT * from public.address', con=conn)
-    city = read_table(sql='SELECT * from public.city', con=conn)
-    country= read_table(sql='SELECT * FROM public.country', con=conn)
-    dim_store= transform_store(df=store,df1=name,df2=address,df3=city,df4=country)
+    #store = read_table(sql='SELECT * FROM public.store', con=conn)
+   # name= read_table(sql='SELECT * from public.staff', con=conn)
+   # address = read_table(sql='SELECT * from public.address', con=conn)
+   # city = read_table(sql='SELECT * from public.city', con=conn)
+   # country= read_table(sql='SELECT * FROM public.country', con=conn)
+    #dim_store= transform_store(df=store,df1=name,df2=address,df3=city,df4=country)
+    
+    #film table dw parameters
+    film = read_table(sql='SELECT * FROM public.film', con=conn)
+    language= read_table(sql='SELECT * FROM public.language', con=conn)
+    dim_film= transform_film(film_df=film, lang_df=language)
+    load_dim_film = write_table(df=dim_film, con=conn, name='dim_film', schema='dssa', if_exist='replace')
     
 if __name__ == '__main__':
     main()
