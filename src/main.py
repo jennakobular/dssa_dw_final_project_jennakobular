@@ -76,7 +76,7 @@ def create_schema(cursor, schema_name):
     cursor.execute(a)
     return cursor
 
-def select_from_table(cursor, table_name) 
+def select_from_table(cursor, table_name):
     results= cursor.execute(f"SELECT * FROM {table_name};").fetchall()
     return results
 
