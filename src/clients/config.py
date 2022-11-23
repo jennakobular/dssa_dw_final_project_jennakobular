@@ -1,4 +1,3 @@
-import configparser
 from psycopg import connect, Connection
 from psycopg.conninfo import make_conninfo
 from configparser import ConfigParser
@@ -6,7 +5,7 @@ from configparser import ConfigParser
 
 class PostgresClient:
     '''
-    Postgres client for working with postgres databses in python
+    Postgres client for working with postgres databases in Yython
     '''
     def __init__(self, host:str=None, port:int=None, user:str=None, password:str=None, dbname:str=None):
         self.host = host
