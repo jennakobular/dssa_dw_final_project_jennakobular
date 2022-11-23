@@ -1,6 +1,6 @@
 import pandas as pd
 import psycopg
-from src.clients.config import config
+
 
 """i think i can delete this, this is the same as main.py -- just keeping for my notes rn"""
 
