@@ -4,6 +4,7 @@ import pandas as pd
 from clients.config import PostgresClient
 
 
+
 #these are the credentials for sqlalchemy create engine - need to put them somewhere else
 host ='localhost'
 port = 5432
@@ -29,7 +30,7 @@ def read_table(sql, con):
     return df
 
 #loads transformed tables into the dssa schema
-def write_table(df:pd.DataFrame, name, con, schema, if_exist='replace') -> pd.DataFrame:
+def write_table(df, name, con, schema, if_exist='replace'):
     df.to_sql(name=name, con=con, if_exists=if_exist, schema=schema, index=False, method='multi')
     return None
 
@@ -49,12 +50,25 @@ def transform_staff(staff_df):
     dim_staff.drop_duplicates(inplace=True)
     return dim_staff
 
+#using pandas to transform multiple tables from the public dvd rental schema before loading into dssa schema
 
 def transform_store(store_df,staff_df,address_df,city_df,country_df):
+    store_df.rename(columns={'store_id':'sk_store', 'manager_staff_id': 'staff_id'}, inplace=True)
+    staff_df['name']= staff_df.first_name + " " + staff_df.last_name
+    staff_df = staff_df[['staff_id', 'name']].copy()
     
+    country_df= country_df[['country_id', 'country'].copy()]
     
+    city_df = city_df[['city_id', 'city', 'country_id']].copy()
+    city_df = city_df.merge(country_df, how='inner', on='country_id')
     
-    
+    address_df = address_df[['address_id', 'address', 'district', 'city_id']].copy()
+    address_df = address_df.merge(city_df, how='inner', on='city_id')
+    address_df.rename(columns={'district':'state'}, inplace=True)
+    store_df= store_df.merge(staff_df,how='inner',on='staff_id')
+    store_df= store_df.merge(address_df, how='inner', on='address_id')
+    dim_store=store_df[['sk_store', 'name', 'address', 'city', 'state','country']].copy()
+       
     return dim_store
    
 #using pandas to transform film table before loading into dssa schema 
@@ -66,10 +80,25 @@ def transform_film(film_df, lang_df):
     dim_film.drop_duplicates(inplace=True)
     return dim_film
 
-#def transform_date():
+#using pandas to transform and build the data table prior to loading into dssa schema
+def transform_date(date_df):
+    
+    date_df['sk_date'] = date_df.rental_date.dt.strftime("%Y%m%d").astype('int')
+    date_df['date'] = date_df.rental_date.dt.date
+    date_df['quarter'] = date_df.rental_date.dt.quarter
+    date_df['year'] = date_df.rental_date.dt.year
+    date_df['month'] = date_df.rental_date.dt.month
+    date_df['day'] = date_df.rental_date.dt.day
+    dim_date = date_df[['sk_date', 'date', 'quarter', 'year', 'month', 'day']].copy()
+    dim_date.drop_duplicates(inplace=True)
+    return dim_date
+    
 
-
-#def transform_factrental():
+def transform_factrental(customer_df,date_df,store_df,film_df,staff_df):
+    
+    
+    
+    return dim_factrental
 
 
 def main():
@@ -89,18 +118,27 @@ def main():
     load_dim_staff = write_table(df=dim_staff, con=conn, name='dim_staff', schema='dssa', if_exist='replace')
     
     #store table dw parameters
-    #store = read_table(sql='SELECT * FROM public.store', con=conn)
-   # name= read_table(sql='SELECT * from public.staff', con=conn)
-   # address = read_table(sql='SELECT * from public.address', con=conn)
-   # city = read_table(sql='SELECT * from public.city', con=conn)
-   # country= read_table(sql='SELECT * FROM public.country', con=conn)
-    #dim_store= transform_store(df=store,df1=name,df2=address,df3=city,df4=country)
+    store = read_table(sql='SELECT * FROM public.store', con=conn)
+    staff= read_table(sql='SELECT * from public.staff', con=conn)
+    address = read_table(sql='SELECT * from public.address', con=conn)
+    city = read_table(sql='SELECT * from public.city', con=conn)
+    country= read_table(sql='SELECT * FROM public.country', con=conn)
+    dim_store= transform_store(store_df=store,staff_df=staff,address_df=address,city_df=city,country_df=country)
+    load_dim_store= write_table(df=dim_store,con=conn, name='dim_store', schema='dssa', if_exist='replace')
     
     #film table dw parameters
     film = read_table(sql='SELECT * FROM public.film', con=conn)
     language= read_table(sql='SELECT * FROM public.language', con=conn)
     dim_film= transform_film(film_df=film, lang_df=language)
     load_dim_film = write_table(df=dim_film, con=conn, name='dim_film', schema='dssa', if_exist='replace')
+    
+    #date table dw parameters
+    date= read_table(sql='SELECT *  From public.rental',con=conn)
+    dim_date=transform_date(date_df=date)
+    load_dim_date=write_table(df=dim_date,con=conn,name='dim_date',schema='dssa',if_exist='replace')
+    
+    #fact table dw parameters
+    
     
 if __name__ == '__main__':
     main()
