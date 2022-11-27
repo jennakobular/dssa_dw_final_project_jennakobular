@@ -80,7 +80,7 @@ def transform_film(film_df, lang_df):
     dim_film.drop_duplicates(inplace=True)
     return dim_film
 
-#using pandas to transform and build the data table prior to loading into dssa schema
+#using pandas to transform and build the date table prior to loading into dssa schema
 def transform_date(date_df):
     
     date_df['sk_date'] = date_df.rental_date.dt.strftime("%Y%m%d").astype('int')
@@ -93,16 +93,32 @@ def transform_date(date_df):
     dim_date.drop_duplicates(inplace=True)
     return dim_date
     
-
-def transform_factrental(customer_df,date_df,store_df,film_df,staff_df):
+#using pandas to transform & build fact rental table prior to loading into dssa schema
+def transform_factrental(rental_df,inventory_df,dim_date,dim_film,dim_staff,dim_store):
     
+    rental_df.rename(columns={'customer_id':'sk_customer', 'rental_date':'date'}, inplace=True)
+    rental_df['date'] = rental_df.date.dt.date
+    rental_df = rental_df.merge(dim_date, how='inner', on='date')
+    rental_df = rental_df.merge(inventory_df, how='inner', on='inventory_id')
+    rental_df = rental_df.merge(dim_film, how='inner', left_on='film_id', right_on='sk_film')
     
+    rental_df = rental_df.merge(dim_staff, how='inner', left_on='staff_id', right_on='sk_staff')
+    rental_df = rental_df.merge(dim_store, how='inner', on='name')
     
+    rental_df = rental_df.groupby(['sk_customer', 'sk_date', 'sk_store', 'sk_film', 'sk_staff']).agg(count_rentals=('rental_id','count')).reset_index()
+    
+    dim_factrental = rental_df[['sk_customer', 'sk_date', 'sk_store', 'sk_film', 'sk_staff', 'count_rentals']].copy()
     return dim_factrental
 
 
-def main():
     
+
+
+def main():
+    """
+    This is needed to actually run and execute the functions. The parameters needed in each function are defined below.
+        
+    """
     #parameters to connect to postgresql
     SQLALCHEMY_DATABASE_URI = f"{dbtype}://{user}:{password}@{host}:{port}/{db}"
     conn = create_engine(SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
@@ -133,11 +149,18 @@ def main():
     load_dim_film = write_table(df=dim_film, con=conn, name='dim_film', schema='dssa', if_exist='replace')
     
     #date table dw parameters
-    date= read_table(sql='SELECT *  From public.rental',con=conn)
+    date= read_table(sql='SELECT *  FROM public.rental',con=conn)
     dim_date=transform_date(date_df=date)
     load_dim_date=write_table(df=dim_date,con=conn,name='dim_date',schema='dssa',if_exist='replace')
     
     #fact table dw parameters
+    rental = read_table(sql='SELECT * FROM public.rental', con=conn)
+    inventory = read_table(sql='SELECT * FROM public.inventory',con=conn)
+    dim_factrental = transform_factrental(rental_df=rental,inventory_df= inventory,dim_date=dim_date,dim_film=dim_film,dim_staff=dim_staff,dim_store=dim_store)
+    load_dim_factrental=write_table(df=dim_factrental,con=conn,name='fact_rental', schema='dssa',if_exist='replace')
+   
+    
+    
     
     
 if __name__ == '__main__':
