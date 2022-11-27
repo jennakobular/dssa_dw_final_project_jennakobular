@@ -9,7 +9,7 @@ from clients.config import PostgresClient
 host ='localhost'
 port = 5432
 user = 'postgres'
-password = 'Frog$1Ow'
+password = 
 db = 'dvdrental'
 dbtype = "postgresql+psycopg2"
 
