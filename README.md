@@ -29,4 +29,4 @@ This project structure should be used to help viewers understand where to "find"
 
 
 ## __Here is what the Star Schema looks like__
-![Alt text](../../star%20schema1.png)
+![Star Schema](../../../../../../../C:/Users/17326/OneDrive%20-%20go.Stockton.edu/Documents/dssa/dssa_dw_final_project_jennakobular/star%20schema1.png)
