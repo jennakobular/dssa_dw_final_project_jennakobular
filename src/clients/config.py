@@ -1,3 +1,5 @@
+#this is another example of a possible way to connect to a database using psycopg and config parser, except this is a class as opposed to a function
+
 from psycopg import connect, Connection
 from psycopg.conninfo import make_conninfo
 from configparser import ConfigParser
@@ -5,9 +7,12 @@ from configparser import ConfigParser
 
 class PostgresClient:
     '''
-    Postgres client for working with postgres databases in Yython
+    Postgres client for working with postgres databases in Python
+    
     '''
-    def __init__(self, host:str=None, port:int=None, user:str=None, password:str=None, dbname:str=None):
+    def __init__(self, host, port, user, password, dbname):
+        
+        """this reads credentials from a config file -- for example a database.ini"""
         self.host = host
         self.port = port
         self.user = user
@@ -15,16 +20,7 @@ class PostgresClient:
         self.database = dbname
         
     def connect_from_config(self, path:str, section:str, **kwargs) -> Connection:
-        '''
-        This makes a psycopg3 connection object from a config file
-        
-        The args: path(str) - path to the config file
-        section(str)- name of section in the confid file
-        
-        It return a new connection instance
-        
-        '''
-        
+           
         conn_dict = {}
         config_parser = ConfigParser()
         
@@ -45,16 +41,7 @@ class PostgresClient:
         return conn
     
     def connect(self, **kwargs) -> Connection:
-        '''
-        
-        This creates a psycopg3 connection object from connection parameters
-        passed as **kwargs. Alias for psycopg.connect()
-        
-        This Returns:
-            Connection: a new connection instance
-        
-        '''
-        
+       
         conn = connect(   
             connfinfo=make_conninfo(
                 host=self.host,
