@@ -26,7 +26,4 @@ This project structure should be used to help viewers understand where to "find"
 *   `LICENSE` - Open source license markdown
 *   `README` - Markdown file describing the project
 *   `requirements.txt` - list of python libraries to install with `pip`
-
-
-## __Here is what the Star Schema looks like__
-![Star Schema](../../../../../../../C:/Users/17326/OneDrive%20-%20go.Stockton.edu/Documents/dssa/dssa_dw_final_project_jennakobular/star%20schema1.png)
+*   `star schema1.png` - this is an image of what the star schema looks like.

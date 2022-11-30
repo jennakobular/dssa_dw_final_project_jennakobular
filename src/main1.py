@@ -6,12 +6,12 @@ from clients.config import PostgresClient
 
 
 #these are the credentials for sqlalchemy create engine - need to put them somewhere else
-host ='localhost'
-port = 5432
-user = 'postgres'
-password = 
-db = 'dvdrental'
-dbtype = "postgresql+psycopg2"
+host = os.environ["host"]
+port = os.environ["port"]
+user = os.environ["user"]
+password = os.environ["password"]
+db = os.environ["db"]
+dbtype = os.environ["dbtype"]
 
 SQLALCHEMY_DATABASE_URI = f"{dbtype}://{user}:{password}@{host}:{port}/{db}"
 

@@ -10,7 +10,13 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "env":{"host":"localhost",
+            "port": "5432",
+            "user":"postgres",
+            "password":"Frog$1Ow",
+            "db": "dvdrental",
+            "dbtype":"postgresql+psycopg2"}
         }
     ]
 }
