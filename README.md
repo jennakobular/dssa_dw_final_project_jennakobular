@@ -29,4 +29,4 @@ This project structure should be used to help viewers understand where to "find"
 *   `README` - Markdown file describing the project
 *   `requirements.txt` - list of python libraries to install with `pip`
 *   `star schema1.png` - this is an image of what the star schema looks like.
-*   `dag.png' - an image of what the dag looks like.
+*   `dag.png` - an image of what the dag looks like.
