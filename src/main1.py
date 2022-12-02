@@ -13,6 +13,7 @@ from networkx import (
     topological_sort
 )
 
+#--------------- PARAMETERS-----------------#
 
 #these are the credentials for sqlalchemy create engine 
 host = os.environ["host"]
@@ -22,25 +23,68 @@ password = os.environ["password"]
 db = os.environ["db"]
 dbtype = os.environ["dbtype"]
 
+task_queue = QueueFactory.factory()
+
 SQLALCHEMY_DATABASE_URI = f"{dbtype}://{user}:{password}@{host}:{port}/{db}"
+
+
+
+# --------------------- FUNCTIONS ----------------------#
+# Below are all of the functions needed for the ETL process.
+
+
 
 #creates a connection to the dvd rental database in PostgreSQL
 def create_conn():
+    """creating a connection to dvd rental database using sqlalchemy
+
+    Returns:
+        con - connection
+    """
     con= create_engine(SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
     return con
 
 #extracts from the dvdrental public schema
 def read_table(sql, con):
+    """ accepts a SQL query and extracts data from the database
+
+    Args:
+        sql (string): SQL query
+        con (connection): a connection instance
+
+    Returns:
+        df (pandads dataframe) - a pd.DataFrame that can be easily transformed and manipulated
+    """
     df = pd.read_sql(sql, con)
     return df
 
 #loads transformed tables into the dssa schema
 def write_table(df, name, con, schema, if_exist='replace'):
+    """Writes (loads) transformed pd.DataFrames into the data warehouse
+
+    Args:
+        df (pd.DataFrame): df that transformed data is stored in
+        name (str): name of datawarehoue table 
+        con (Connection): a connection instance
+        schema (str): name of the schema where table is located
+        if_exist (str, optional): Defaults to 'replace'.
+
+    Returns:
+        None: pd.Dataframe is used to load transformed data into the data warehouse.
+    """
     df.to_sql(name=name, con=con, if_exists=if_exist, schema=schema, index=False, method='multi')
     return None
 
 #using pandas to transform customer table prior to loading into dssa schema
 def transform_customer(cust_df):
+    """ constructs the customer dimension table
+
+    Args:
+        cust_df (pd.DataFrame):dataframe from the customer table
+
+    Returns:
+       pd.DataFrame: customer dimension object as a pandas dataframe
+    """
     cust_df.rename(columns={'customer_id': 'sk_customer'}, inplace=True)
     cust_df['name'] = cust_df.first_name + " " + cust_df.last_name
     dim_customer = cust_df[['sk_customer', 'name', 'email']].copy()
@@ -49,6 +93,14 @@ def transform_customer(cust_df):
 
 #using pandas to transform staff table prior to loading into dssa schema
 def transform_staff(staff_df):
+    """constructs staff dimension object
+
+    Args:
+        staff_df (pd.DataFrame): dataframe from raw staff table
+
+    Returns:
+        pd.DataFrame: staff dimension object as a pd.DataFrame
+    """
     staff_df.rename(columns={'staff_id':'sk_staff'}, inplace=True)
     staff_df['name'] = staff_df.first_name + " " + staff_df.last_name 
     dim_staff = staff_df[['sk_staff', 'name','email']].copy()
@@ -58,6 +110,18 @@ def transform_staff(staff_df):
 #using pandas to transform multiple tables from the public dvd rental schema before loading into dssa schema
 
 def transform_store(store_df,staff_df,address_df,city_df,country_df):
+    """ creates the store dimension table
+
+    Args:
+        store_df (pd.DataFrame): dataframe from the raw store table
+        staff_df (pd.DataFrame): dataframe from raw staff table
+        address_df (pd.DataFrame): dataframe from raw address table
+        city_df (pd.DataFrame): dataframe from raw city table
+        country_df (pd.DataFrame): dataframe from raw country table
+
+    Returns:
+        pd.DataFrame: store dimensions as a pandas dataframe
+    """
     store_df.rename(columns={'store_id':'sk_store', 'manager_staff_id': 'staff_id'}, inplace=True)
     staff_df['name']= staff_df.first_name + " " + staff_df.last_name
     staff_df = staff_df[['staff_id', 'name']].copy()
@@ -78,6 +142,15 @@ def transform_store(store_df,staff_df,address_df,city_df,country_df):
    
 #using pandas to transform film table before loading into dssa schema 
 def transform_film(film_df, lang_df):
+    """creates film dimension table
+
+    Args:
+        film_df (pd.DataFrame): dataframe from raw film table
+        lang_df (pd.DataFrame): dataframe from raw language table
+
+    Returns:
+        pd.DataFrame: film dimension table as a pandas dataframe
+    """
     film_df.rename(columns={'film_id':'sk_film', 'rating':'rating_code','length':'film_duration'}, inplace=True)
     lang_df.rename(columns={'name':'language'}, inplace=True)
     film_df = film_df.merge(lang_df, how='inner', on='language_id')
@@ -87,6 +160,14 @@ def transform_film(film_df, lang_df):
 
 #using pandas to transform and build the date table prior to loading into dssa schema
 def transform_date(date_df):
+    """ creates date dimension table
+
+    Args:
+        date_df (pd.DataFrame): dataframe from raw rental table
+
+    Returns:
+        pd.DataFrame: date dimension object as a pandas dataframe
+    """
     
     date_df['sk_date'] = date_df.rental_date.dt.strftime("%Y%m%d").astype('int')
     date_df['date'] = date_df.rental_date.dt.date
@@ -100,6 +181,19 @@ def transform_date(date_df):
     
 #using pandas to transform & build fact rental table prior to loading into dssa schema
 def transform_factrental(rental_df,inventory_df,dim_date,dim_film,dim_staff,dim_store):
+    """creates the fact_rental dimension table
+
+    Args:
+        rental_df (pd.DataFrame): dataframe from raw rental table
+        inventory_df (pd.DataFrame): dataframe from raw inventory table
+        dim_date (pd.DataFrame): dataframe containing the date dimension table (transformed from raw table)
+        dim_film (pd.DataFrame): dataframe containing the film dimension table
+        dim_staff (pd.DataFrame): dataframe containing the staff dimension table
+        dim_store (pd.DataFrame): dataframe containing the store dimension table
+
+    Returns:
+        pd.DataFrame: fact rental dimension table as a pandas dataframe
+    """
     
     rental_df.rename(columns={'customer_id':'sk_customer', 'rental_date':'date'}, inplace=True)
     #rental_df['date'] = rental_df.date.dt.date
@@ -117,6 +211,14 @@ def transform_factrental(rental_df,inventory_df,dim_date,dim_film,dim_staff,dim_
     return dim_factrental
 
 def teardown(con):
+    """closes connection to the database
+
+    Args:
+        con (connection):  engine to the postgresql database, sqlalchemy
+
+    Returns:
+        None - ended connection
+    """
     con= create_engine(SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
     con.dispose()
     return None
@@ -168,7 +270,9 @@ def main():
     dim_factrental = transform_factrental(rental_df=rental,inventory_df= inventory,dim_date=dim_date,dim_film=dim_film,dim_staff=dim_staff,dim_store=dim_store)
     load_dim_factrental=write_table(df=dim_factrental,con=conn,name='fact_rental', schema='dssa',if_exist='replace')    
 
-#creating tasks
+#----------------- TASKS --------------------#
+#If I wanted, I could delete the main portion of my code block and just use the below Tasks to run the code.
+
     connection = Task(create_conn)
     extract_customer=Task(read_table)
     load_customer=Task(write_table)
@@ -230,7 +334,8 @@ def main():
     extract_inventory.run(sql='SELECT * FROM public.inventory',con=conn)
     factrental_transform.run(rental_df=rental,inventory_df= inventory,dim_date=dim_date,dim_film=dim_film,dim_staff=dim_staff,dim_store=dim_store)
     load_fact.run(df=dim_factrental,con=conn,name='fact_rental', schema='dssa',if_exist='replace')    
-    
+   
+   #Using NetworkX to construct a DAG. 
     nodes= [(connection,extract_customer),(extract_customer, customer_transform), (customer_transform,load_customer),
             (connection, extract_staff),(extract_staff, staff_transform),(staff_transform, load_staff),
             (connection,extract_store),(extract_store, extract_staff), (extract_staff,extract_address),(extract_address, extract_city),(extract_city, extract_country), (extract_country,store_transform),(store_transform,load_store),
@@ -241,8 +346,10 @@ def main():
     DAG = nx.DiGraph(nodes)
     nx.draw(DAG)
     print(DAG)
+    
+    #checking that DAG is running properly
     assert is_directed_acyclic_graph(DAG) == True
-   # is_weakly_connected(DAG)
+    assert is_weakly_connected(DAG) == True
     assert is_empty(DAG) == False
     
 
