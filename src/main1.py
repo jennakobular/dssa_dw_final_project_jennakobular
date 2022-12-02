@@ -1,6 +1,6 @@
 import os 
 import matplotlib
-from tasks import Task 
+from common.tasks import Task 
 from common.queues import QueueFactory
 from sqlalchemy import create_engine  #for connection to PostgreSQL
 import pandas as pd #for data processing and transformation

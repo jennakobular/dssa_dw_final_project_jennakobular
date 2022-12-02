@@ -20,10 +20,13 @@ Within my main1.py I have numerous functions which:
 ## __Project Structure__
 This project structure should be used to help viewers understand where to "find" things and where to "put" new things. 
 *   `.config` - This folder is for configuration files (Example: `.json`, `.yaml`, `.toml`, `.ini`)
+*   `.vscode` - This folder is for .json configuration files.
 *   `samples` - Shows some examples of how to get started on different aspects of the project.
 *   `src` - This is the source code folder containing all application code and modules.
+*   `common` - This contains modules that are used in the main code
 *   `tools` - A place for automation related scripts.
 *   `LICENSE` - Open source license markdown
 *   `README` - Markdown file describing the project
 *   `requirements.txt` - list of python libraries to install with `pip`
 *   `star schema1.png` - this is an image of what the star schema looks like.
+*   `dag.png' - an image of what the dag looks like.
