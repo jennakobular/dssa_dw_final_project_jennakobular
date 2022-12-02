@@ -1,6 +1,3 @@
-import pandas as pd
-
-
 class Task():
     
     def __init__(self, func):
