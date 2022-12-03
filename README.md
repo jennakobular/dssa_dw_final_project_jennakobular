@@ -30,3 +30,13 @@ This project structure should be used to help viewers understand where to "find"
 *   `requirements.txt` - list of python libraries to install with `pip`
 *   `star schema1.png` - this is an image of what the star schema looks like.
 *   `dag.png` - an image of what the dag looks like.
+
+"" __Code Snippets__
+
+Below is how I created the image of the DAG this program generates. 
+
+![dag screenshot](https://user-images.githubusercontent.com/110640590/205466358-9e3a1952-456d-42da-a720-3e3fd6aa5e3b.png)
+
+Here is an image of the Star Schema that this project creates.
+
+![star schema1](https://user-images.githubusercontent.com/110640590/205466496-7ba9daa9-61ff-4e56-899b-afeea6d0dc15.png)
