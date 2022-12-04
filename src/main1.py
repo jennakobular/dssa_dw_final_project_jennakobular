@@ -338,10 +338,14 @@ def main():
    #Using NetworkX to construct a DAG. 
     nodes= [(connection,extract_customer),(extract_customer, customer_transform), (customer_transform,load_customer),
             (connection, extract_staff),(extract_staff, staff_transform),(staff_transform, load_staff),
-            (connection,extract_store),(extract_store, extract_staff), (extract_staff,extract_address),(extract_address, extract_city),(extract_city, extract_country), (extract_country,store_transform),(store_transform,load_store),
-            (connection,extract_film), (extract_film, extract_language),(extract_language, film_transform),(film_transform, load_film),
+            (connection,extract_store),(extract_store, extract_staff), (extract_staff,extract_address),
+            (extract_address, extract_city),(extract_city, extract_country), (extract_country,store_transform),
+            (store_transform,load_store), (connection,extract_film), (extract_film, extract_language),
+            (extract_language, film_transform),(film_transform, load_film),
             (connection,extract_date), (extract_date, date_transform),(date_transform,load_date),
-            (connection,extract_rental), (extract_rental, extract_inventory), (extract_inventory,factrental_transform),(factrental_transform,load_fact)]
+            (connection,extract_rental), (extract_rental, extract_inventory),
+            (extract_inventory,factrental_transform),(factrental_transform,load_fact)]
+    
     
     DAG = nx.DiGraph(nodes)
     nx.draw(DAG)
